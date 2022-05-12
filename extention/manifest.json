@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+	"name": "Steam stickers on weapons",
+    "short_name": "SSoW",
+    "version": "2.0.0",
+	"description": "Steam stickers on weapons",
+	"content_scripts": [
+	    {
+		    "matches": [
+                "*://*.steamcommunity.com/market/listings/730/*",
+                "*://*.steamcommunity.com/id/*/inventory*",
+                "*://*.steamcommunity.com/profiles/*/inventory*",
+                "*://*.cs.money/*"
+            ],
+            "css": ["all.css"],
+            "js": ["script.js"]
+        }
+	],
+	"background": {
+	    "scripts": ["jquery.js","background.js"],
+		"persistent": false
+	},
+    "permissions": [
+        "https://api.csgofloat.com/*",
+        "*://*.steamcommunity.com/market/listings/730/*",
+        "*://*.steamcommunity.com/id/*/inventory*",
+        "*://*.steamcommunity.com/profiles/*/inventory*",
+        "*://*.cs.money/*",
+        "storage"
+    ]
+}

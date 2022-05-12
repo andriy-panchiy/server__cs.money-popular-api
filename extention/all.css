@@ -1,0 +1,102 @@
+.stickers {
+  position: absolute;
+  top: 44px;
+  left: 0;
+}
+.sticker {
+  width: 24px !important;
+}
+.pageSwitch {
+  position: sticky;
+  z-index: 999;
+  top: 10px;
+  background: #16202d !important;
+  width: 100%;
+  margin: 10px 0 0 0;
+  padding: 10px 15px;
+  box-sizing: border-box;
+}
+.otherSitesPrices {
+  height: 50px;
+  min-height: auto !important;
+  width: calc(100% - 22px) !important;
+  margin: 0 10px 20px !important;
+  padding: 10px 15px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+
+.steam_price > a > span, .sticker_name {
+    display: block;
+    margin: 10px 0;
+}
+#sticker_info img:hover{
+  outline: 1px solid yellow;
+}
+.tabitems_ctn{
+  position: absolute !important;
+  top: 0;
+  left: calc(50% - 926px / 2 - 230px);
+}
+.games_list_tab, a.games_list_tab{
+  width: 230px !important;
+}
+.games_list_tabs{
+  display: flex;
+  flex-direction: column;
+}
+.games_list_tab_separator, #inventory_logos{
+  display: none !important;
+}
+#mainContents{
+  position: relative;
+  padding-top: 0px !important;
+}
+.filter_ctn{
+  margin-top: 30px;
+}
+.inventory_links{
+  position: absolute;
+  top: -80px !important;
+  width: 926px;
+  left: calc(50% - 926px / 2);
+}
+#tabcontent_inventory{
+  margin-top: 0 !important;
+}
+.games_list_tabs_ctn{
+  padding: 0 !important;
+}
+.floatIndicator{
+  display: none !important;
+}
+.priceIndicator{
+  position: absolute !important;
+  bottom: 17px !important;
+  left: 2px !important;
+  font-size: 0.7rem !important;
+}
+[data-tooltip]::before{
+  visibility: visible !important;
+  opacity: 1 !important;
+  margin-left: 0 !important;
+  margin-bottom: 0 !important;
+  left: 100px !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center;
+  bottom: 0 !important;
+  padding: 0 !important;
+}
+.stickerSlot{
+  margin-bottom: 2px;
+}
+[data-tooltip]::after{
+  display: none !important;
+}
+.market_listing_seller{
+  width: auto !important;
+}
