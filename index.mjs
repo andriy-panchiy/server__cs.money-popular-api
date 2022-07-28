@@ -1,9 +1,9 @@
-import { createServer } from 'http';
 import express from "express";
 import expressHbs from "express-handlebars";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { MongoClient } from "mongodb";
 import { google } from "googleapis";
@@ -12,12 +12,9 @@ import { dirname } from "path";
 
 dotenv.config();
 
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const { PORT, MONGODB_URL, spreadsheetId } = process.env;
-
+const { PORT, MONGODB_URL } = process.env;
 const app = express();
 const mongo = new MongoClient(MONGODB_URL);
 const configHbs = expressHbs.engine({
@@ -53,39 +50,76 @@ function isJsonValid(str) {
   });
   const client = await auth.getClient();
   const googleSheets = google.sheets({ version: "v4", auth: client });
-  const getRows = await googleSheets.spreadsheets.values.get({
-    auth,
-    spreadsheetId,
-    range: "Sheet1",
-  });
-  const table = await getRows.data.values.map((item) => item[0]);
+
+  const popularSkins = await googleSheets.spreadsheets.values.get({ auth, spreadsheetId: "1fd2AVJc_No3Oomf6juqOchWFvPxG-hgWi626zhIVYWY", range: "Popular skins" });
+  const popularSkinsData = await popularSkins.data.values.map((item) => item[0]);
+
+  const hiddenSkins = await googleSheets.spreadsheets.values.get({ auth, spreadsheetId: "1kzr7zcCnxHstKc0xf2vkRm53sMIh2tV4_jjVQ9Rd-Xs", range: "hidden_skins" });
+  const hiddenSkinsData = await hiddenSkins.data.values.map((item) => item[0]);
+
+  const limitedSkins = await googleSheets.spreadsheets.values.batchGet({ auth, spreadsheetId: "1UQgw_SpAZk85igi5Nz9xzujq5ygAKJIeBvN1Bj4qKEU", ranges: ["limited_skins", "limited_skins_update"] });
+  const limitedSkinsData = await limitedSkins.data.valueRanges.map((item) => item.values.slice(1).map((item) => item[0])).flat();
+
+  const toFixedNoRounding = (number, precision) => {
+    const factor = Math.pow(10, precision);
+    return Math.floor(number * factor) / factor;
+  }
+  const cutFloat = (float, n = 1) => {
+    let coefficient = -Math.floor(Math.log10(float) + 1);
+    let float_short = toFixedNoRounding(float, (coefficient || n) + n);
+    return float_short || float;
+  }
 
   io.on('connection', (socket) => {
-    socket.on('sales', async ({ name_id }) => {
-      const sales = await db_sales.findOne(
-        { name_id },
-        { projection: { _id: 0, name_id: 1, data: 1 } }
-      );
-      console.log(sales);
-      io.emit('answer', sales);
-      const response = await fetch('https://old.cs.money/market_sales?appid=730&name_id=' + name_id);
-      const data = await response.json();
-      if (response.status === 200 && data?.length) {
-        await db_sales.updateOne(
-          { name_id },
-          { $set: { name_id, data } }
-        );
-      }
+    socket.on('getSales', async ({ name_id, search_float, limit = 60 }) => {
+      const short_search_float = cutFloat(search_float);
+      const full_sales = await db_sales.findOne({ name_id }, { projection: { _id: 0 } });
+      const total_sales = full_sales.data.filter((item) => {
+        return String(item.floatvalue).includes(short_search_float) && !String(item.floatvalue).includes(search_float)
+      }).sort((a,b) => b.update_time - a.update_time);
+
+      const similar_sales = full_sales.data.filter((item) => {
+        if (String(item.floatvalue).includes(search_float)) {
+          item.similar_sale = true;
+          return true;
+        }
+      }).sort((a,b) => b.update_time - a.update_times);
+
+      const filtered_sales = [...similar_sales, ...total_sales].slice(0, limit);
+      io.emit('answer', filtered_sales);
     });
   });
   app.get("/popular-skins", async function (req, res) {
-    if (table) {
-      return res.status(200).json(table.slice(1, table.length));
+    if (popularSkinsData) {
+      return res.status(200).json(popularSkinsData);
     }
     return res.status(400).json({
       status: false,
       error: "No data found",
     });
+  });
+  app.get("/hiddenSkins", async function (req, res) {
+    if (hiddenSkinsData) {
+      return res.status(200).json(hiddenSkinsData);
+    }
+    return res.status(400).json({
+      status: false,
+      error: "No data found",
+    });
+  });
+  app.get("/limitedSkinsData", async function (req, res) {
+    if (limitedSkinsData) {
+      return res.status(200).json(limitedSkinsData);
+    }
+    return res.status(400).json({
+      status: false,
+      error: "No data found",
+    });
+  });
+  app.get("/loadSkinsBaseList", async function (req, res) {
+    const skinsBaseList = {};
+    await fetch('https://old.cs.money/js/database-skins/library-en-730.js?v=22').then(res => res.text()).then(text => eval(text));
+    return res.status(200).json(skinsBaseList[730]);
   });
   app.post("/getItems", async function (req, res) {
     const { steamId } = req.body;
@@ -137,5 +171,7 @@ function isJsonValid(str) {
       error: "SteamId is not valid",
     });
   });
-  server.listen(PORT || 3000);
+  server.listen(PORT || 3000, () => {
+    console.log(`Server is running on port ${PORT || 3000}`);
+  });
 })();
